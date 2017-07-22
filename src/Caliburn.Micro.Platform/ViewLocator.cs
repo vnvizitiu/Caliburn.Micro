@@ -260,9 +260,8 @@ namespace Caliburn.Micro
         ///   Pass the type of view as a parameter and recieve an instance of the view.
         /// </remarks>
         public static Func<Type, UIElement> GetOrCreateViewType = viewType => {
-            var view =
-            (IoC.GetAllInstances(viewType).FirstOrDefault() as UIElement) ??
-            (IoC.GetInstance(viewType, null) as UIElement);
+            var view = IoC.GetAllInstances(viewType)
+                           .FirstOrDefault() as UIElement;
 
             if (view != null) {
                 InitializeComponent(view);
@@ -443,19 +442,20 @@ namespace Caliburn.Micro
         /// </summary>
         /// <param name = "element">The element to initialize</param>
         public static void InitializeComponent(object element) {
-#if !WinRT && !XFORMS
+#if XFORMS
+            return;
+#elif !WinRT
             var method = element.GetType()
                 .GetMethod("InitializeComponent", BindingFlags.Public | BindingFlags.Instance);
+
+            method?.Invoke(element, null);
 #else
             var method = element.GetType().GetTypeInfo()
                 .GetDeclaredMethods("InitializeComponent")
                 .SingleOrDefault(m => m.GetParameters().Length == 0);
+
+            method?.Invoke(element, null);
 #endif
-
-            if (method == null)
-                return;
-
-            method.Invoke(element, null);
         }
     }
 }
